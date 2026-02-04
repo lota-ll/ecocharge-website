@@ -61,9 +61,10 @@ mkdir -p ${BACKUP_DIR}
 
 echo ""
 echo "[5/10] Copying application files..."
-# Assuming the app files are in current directory
+# Copy all files from current directory
 cp -r ./* ${APP_DIR}/ 2>/dev/null || true
 cp .env ${APP_DIR}/.env 2>/dev/null || true
+cp .npmrc ${APP_DIR}/.npmrc 2>/dev/null || true
 
 # Copy backup script to maintenance directory
 cp scripts/backup.js ${MAINTENANCE_DIR}/backup.js
@@ -72,10 +73,14 @@ chmod +x ${MAINTENANCE_DIR}/backup.js
 echo ""
 echo "[6/10] Installing npm packages..."
 cd ${APP_DIR}
-npm install --production
+npm install --legacy-peer-deps
 
 echo ""
-echo "[7/10] Setting up permissions..."
+echo "[7/10] Building application..."
+npm run build
+
+echo ""
+echo "[8/10] Setting up permissions..."
 chown -R ${APP_USER}:${APP_USER} ${APP_DIR}
 chown -R ${APP_USER}:${APP_USER} ${LOG_DIR}
 chown -R root:root ${MAINTENANCE_DIR}
@@ -84,7 +89,7 @@ chmod 755 ${MAINTENANCE_DIR}
 chmod 755 ${BACKUP_DIR}
 
 echo ""
-echo "[8/10] Configuring sudo for privilege escalation vulnerability..."
+echo "[9/10] Configuring sudo for privilege escalation vulnerability..."
 cat > /etc/sudoers.d/ecocharge << 'EOF'
 # EcoCharge maintenance script
 # VULNERABLE: www-data can run backup.js as root without password
@@ -93,7 +98,7 @@ EOF
 chmod 440 /etc/sudoers.d/ecocharge
 
 echo ""
-echo "[9/10] Creating CTF flags..."
+echo "[10/10] Creating CTF flags..."
 
 # Flag 1 - Initial access (www-data readable)
 echo "FLAG{r34ct_s3rv3r_c0mp0n3nts_d3s3r14l1z4t10n}" > ${APP_DIR}/.flag1.txt
@@ -105,7 +110,7 @@ echo "FLAG{pr1v3sc_v14_n0d3_c0mm4nd_1nj3ct10n}" > /root/.flag2.txt
 chmod 600 /root/.flag2.txt
 
 echo ""
-echo "[10/10] Configuring nginx..."
+echo "[+] Configuring nginx..."
 cat > /etc/nginx/sites-available/ecocharge << 'EOF'
 server {
     listen 80;
@@ -117,8 +122,8 @@ server {
     ssl_certificate_key /etc/nginx/ssl/ecocharge.key;
 
     # Information disclosure headers (intentional for CTF)
-    add_header X-Powered-By "Next.js 15.0.3 / React 19.1.0";
-    add_header X-Framework-Version "react-server-dom-webpack@19.1.0";
+    add_header X-Powered-By "Next.js 14.2.5 / React 18.3.1";
+    add_header X-Framework-Version "react-server-dom-webpack (CVE-2025-55182 simulated)";
     add_header Server "EcoCharge Portal v1.0";
 
     location / {
@@ -130,13 +135,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_cache_bypass $http_upgrade;
-    }
-
-    # Verbose error pages (information disclosure)
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/html;
-        internal;
     }
 }
 EOF
@@ -191,18 +189,11 @@ echo "=============================================="
 echo ""
 echo "Application URL: https://ecocharge.local"
 echo "Application Dir: ${APP_DIR}"
-echo "Logs: ${LOG_DIR}"
+echo "Logs: journalctl -u ecocharge -f"
 echo ""
 echo "CTF Flags:"
 echo "  - Flag 1: ${APP_DIR}/.flag1.txt (www-data)"
 echo "  - Flag 2: /root/.flag2.txt (root)"
 echo ""
-echo "Vulnerabilities configured:"
-echo "  1. CVE-2025-55182 (React Server Components RCE)"
-echo "  2. Command injection in backup.js (PrivEsc)"
-echo "  3. Weak authentication (MD5, no signature)"
-echo "  4. Information disclosure in headers/errors"
-echo ""
 echo "To check status: systemctl status ecocharge"
-echo "To view logs: journalctl -u ecocharge -f"
 echo ""

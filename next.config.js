@@ -1,11 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable React Server Components (required for CVE-2025-55182)
+  // Enable experimental features for server actions
   experimental: {
-    serverActions: {
-      enabled: true,
-      allowedOrigins: ['*'],
-    },
+    serverActions: true,
   },
   
   // Disable strict mode for CTF purposes
@@ -17,17 +14,6 @@ const nextConfig = {
     unoptimized: true,
   },
   
-  // Webpack configuration for server components
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Enable vulnerable deserialization behavior
-      config.resolve.alias = {
-        ...config.resolve.alias,
-      };
-    }
-    return config;
-  },
-  
   // Headers for CTF information disclosure
   async headers() {
     return [
@@ -36,11 +22,11 @@ const nextConfig = {
         headers: [
           {
             key: 'X-Powered-By',
-            value: 'Next.js 15.0.3 / React 19.1.0',
+            value: 'Next.js 14.2.5 / React 18.3.1',
           },
           {
             key: 'X-Framework-Version',
-            value: 'react-server-dom-webpack@19.1.0',
+            value: 'react-server-dom-webpack@18.3.1 (simulated CVE-2025-55182)',
           },
           {
             key: 'Server',
