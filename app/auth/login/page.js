@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered');
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -64,6 +67,13 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-gray-800">Вхід в систему</h1>
             <p className="text-gray-500 mt-2">Введіть свої облікові дані</p>
           </div>
+          
+          {/* Success message after registration */}
+          {registered && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+              Реєстрація успішна! Тепер ви можете увійти.
+            </div>
+          )}
           
           {/* Error message */}
           {error && (
@@ -144,7 +154,7 @@ export default function LoginPage() {
           </div>
         </div>
         
-        {/* Demo credentials hint (for CTF) */}
+        {/* Demo credentials hint (only test user, not admin) */}
         <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm">
           <p className="font-medium text-yellow-800">Демо доступ:</p>
           <p className="text-yellow-700 mt-1">

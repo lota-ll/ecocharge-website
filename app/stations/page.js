@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 // Status badge component
 function StatusBadge({ status }) {
@@ -54,9 +55,12 @@ function StationCard({ station }) {
           <span className="text-2xl font-bold text-green-600">{station.pricePerKwh}</span>
           <span className="text-gray-500 text-sm ml-1">грн/кВт·год</span>
         </div>
-        <button className="btn-primary text-sm">
+        <Link 
+          href={`/stations/${station.id}`}
+          className="btn-primary text-sm"
+        >
           Детальніше
-        </button>
+        </Link>
       </div>
     </div>
   );

@@ -11,22 +11,24 @@ const users = [
   {
     id: 1,
     email: 'admin@ecocharge.local',
-    // Weak password hash (MD5 for CTF purposes)
-    passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', // "password"
+    // Password: EcoCharge2024! (crackable with themed wordlist + rules)
+    passwordHash: '89fa0a47d42523ccf0dd5f16c5995e57',
     role: 'admin',
     name: 'System Administrator'
   },
   {
     id: 2,
     email: 'operator@ecocharge.local',
-    passwordHash: '482c811da5d5b4bc6d497ffa98491e38', // "password123"
+    // Password: Operator123!
+    passwordHash: '4a7d29465a3f19a76f1f1c72add4aa0f',
     role: 'operator',
     name: 'Station Operator'
   },
   {
     id: 3,
     email: 'user@ecocharge.local',
-    passwordHash: '25d55ad283aa400af464c76d713c07ad', // "12345678"
+    // Password: 12345678 (weak for demo purposes)
+    passwordHash: '25d55ad283aa400af464c76d713c07ad',
     role: 'user',
     name: 'Test User'
   }

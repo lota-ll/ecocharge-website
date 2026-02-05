@@ -41,6 +41,15 @@ export default function RootLayout({ children }) {
                   Увійти
                 </a>
               </div>
+              
+              {/* Mobile menu button */}
+              <div className="md:hidden flex items-center">
+                <button className="text-gray-600 hover:text-green-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </nav>
@@ -48,13 +57,56 @@ export default function RootLayout({ children }) {
         <main>{children}</main>
         
         <footer className="bg-gray-800 text-white py-8 mt-16">
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <p className="text-gray-400">
-              © 2024 EcoCharge. Регіональний оператор мережі зарядних станцій.
-            </p>
-            <p className="text-gray-500 text-sm mt-2">
-              Powered by Next.js 15 & React 19.1.0
-            </p>
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid md:grid-cols-4 gap-8 mb-8">
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+                  </svg>
+                  <span className="text-lg font-bold">EcoCharge</span>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  Регіональний оператор мережі зарядних станцій для електромобілів
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold mb-4">Навігація</h3>
+                <ul className="space-y-2 text-gray-400 text-sm">
+                  <li><a href="/stations" className="hover:text-white transition">Станції</a></li>
+                  <li><a href="/prices" className="hover:text-white transition">Тарифи</a></li>
+                  <li><a href="/about" className="hover:text-white transition">Про нас</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold mb-4">Кабінет</h3>
+                <ul className="space-y-2 text-gray-400 text-sm">
+                  <li><a href="/auth/login" className="hover:text-white transition">Увійти</a></li>
+                  <li><a href="/auth/register" className="hover:text-white transition">Реєстрація</a></li>
+                  <li><a href="/dashboard" className="hover:text-white transition">Мій кабінет</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold mb-4">Контакти</h3>
+                <ul className="space-y-2 text-gray-400 text-sm">
+                  <li>+380 (44) 123-45-67</li>
+                  <li>info@ecocharge.local</li>
+                  <li>м. Київ, вул. Хрещатик, 1</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-700 pt-8 text-center">
+              <p className="text-gray-400 text-sm">
+                © 2024 EcoCharge. Всі права захищені.
+              </p>
+              <p className="text-gray-500 text-xs mt-2">
+                Powered by Next.js 14 & React 18 | Server: 192.168.125.50
+              </p>
+            </div>
           </div>
         </footer>
       </body>

