@@ -1,20 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable experimental features for server actions
-  experimental: {
-    serverActions: true,
-  },
-  
   // Disable strict mode for CTF purposes
   reactStrictMode: false,
   
-  // Allow all hosts
+  // Allow all image hosts
   images: {
-    domains: ['*'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+    ],
     unoptimized: true,
   },
   
-  // Headers for information disclosure (realistic, no CVE hints)
+  // Disable powered-by header (we set custom ones below)
+  poweredByHeader: false,
+  
+  // Headers for information disclosure
   async headers() {
     return [
       {
@@ -22,15 +29,11 @@ const nextConfig = {
         headers: [
           {
             key: 'X-Powered-By',
-            value: 'Next.js 15.0.3',
-          },
-          {
-            key: 'X-Framework-Version',
-            value: 'React 19.1.0',
+            value: 'Next.js',
           },
           {
             key: 'Server',
-            value: 'EcoCharge Portal v1.0',
+            value: 'EcoCharge Portal v1.1',
           },
         ],
       },
